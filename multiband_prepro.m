@@ -351,44 +351,25 @@ function []  = multiband_prepro(subject)
         copyfile(cfg.fixEpi, cfg.regdir)
 
         cd(cfg.regdir);
-
-        % Split 4D file into 3D
-        % ANTs works on 3D files
-        system([cfg.fsldir,'fslsplit ',cfg.fixEpi])
-        delete(cfg.fixEpi)
-
-        splitEpi = 'vol.nii.gz';
         
         sprintf('%s: Running ANTs registration\n', subject)
 
-        SpatialNormalisationANTs([cfg.regdir, splitEpi(1:end-7)],cfg.tN-1,[cfg.featdir,meanEPIunsmoothed],...          
+        SpatialNormalisationANTs([cfg.regdir, cfg.fixEpi,[cfg.featdir,meanEPIunsmoothed],...          
                 [cfg.t1prepro,cfg.t1,'.gz'],...
                 [fastdir,gm],...
                 [fastdir,wm],...
                 [fastdir,csf],...
-                mni_template,cfg.antsdir,cfg.scriptdir)
-
-        % Note: tN-1: because the FSL counting system which starts from 0. Output of fslsplit will be counted from 0 to tN-1. 
-        % In SpatialNormalisationANTs script, the for loop has been hardcoded to start from 0 to end.
-
-        % Merge warped epi images 
-        disp('merging 3d images');
-        system([cfg.fsldir,'fslmerge -t w',splitEpi,' w',splitEpi(1:end-7),'*.nii.gz']);
+                mni_template,cfg.antsdir,cfg.antsscriptsdir)
 
         % rename files
         disp('renaming outputs');
-        movefile (['w',splitEpi],[cfg.fixEpi(1:end-7),'_ants.nii.gz'])
+        movefile (['w',cfg.fixEpi],[cfg.fixEpi(1:end-7),'_ants.nii.gz'])
 
         movefile (['w',gm], 'tissue_gm_ants.nii.gz')
         movefile (['w',wm], 'tissue_wm_ants.nii.gz')
         movefile (['w',csf], 'tissue_csf_ants.nii.gz')
 
         movefile (['w',cfg.t1,'.gz'], [cfg.t1(1:end-4),'_ants.nii.gz'])
-
-        % Clean up 3D files
-        disp('cleaning 3d files');
-        delete([splitEpi(1:end-7),'*.nii.gz'])
-        delete(['w',splitEpi(1:end-7),'*.nii.gz'])
 
       
         display('done')
