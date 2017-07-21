@@ -1,6 +1,7 @@
 function []  = multiband_prepro(subject)
 
-
+    % Kristina Sabaroedin, Brain & Mental Health Laboratory, 2017
+    
     runCrop = 1;
     runSkullStrip = 1;
     runFEAT = 0;
@@ -19,7 +20,7 @@ function []  = multiband_prepro(subject)
     % Make sure that all required R libraries are installed (I think FIX
     % will prompt you to install the libraries, or it might fail and the
     % prompts will appear on the log file)
-    % On M3, please create an .Renviron in your home directory and replace
+    % M3 users: please create an .Renviron in your home directory and replace
     % the path to the R package library that you installed
     % This ensures that R points to the libraries installed on your home
     % directory, instead of the library on 3 directory
@@ -153,15 +154,22 @@ function []  = multiband_prepro(subject)
 		switch WhichSkullStrip
 	
 		case 'ANTsBrainExtraction'
+            % Takes a longer time to run, requires a template and a mask,
+            % but more robust than BET. Template and mask used here were
+            % recommended by the creators of the software (for extracting healthy adult
+            % brains)
 			sprintf('%s: Performing ANTs Brain Extraction\n', subject)
 			cfg.antsbrainextracttemplate = '/projects/kg98/kristina/templates/Oasis/T_template0.nii.gz';
 			cfg.antsbrainextractmask = '/projects/kg98/kristina/templates/Oasis/T_template0_BrainCerebellumProbabilityMask.nii.gz';
-			system([cfg.antsscriptsdir,'antsBrainExtraction.sh -d 3 -a ', cfg.croppedt1, ' -e ', cfg.antsbrainextracttemplate, ' -o ANTs']);
+			system([cfg.antsscriptsdir,'antsBrainExtraction.sh -d 3 -a ', cfg.croppedt1, ' -e ', cfg.antsbrainextracttemplate, ' -m', cfg.antsbrainextractmask, ' -o ANTs']);
 			movefile('ANTsBrainExtractionBrain.nii.gz', [cfg.t1,'.gz']);
 			movefile('ANTsBrainExtractionMask.nii.gz', [subject,'_crop_brain_mask.nii.gz']);
 			display('T1 is skull stripped')
 
 		case 'BET'
+            % BET parameters used here was tailored to the Gen of Cog data,
+            % check result to see if these parameters work for your data.
+            % You might have to adjust the flags/values.
         	sprintf('%s: Performing BET with -f 0.3 -m -R -B\n', subject)
         	system([cfg.fsldir,'bet ',cfg.croppedt1,' crop_brain -f 0.3 -m -R -B']);
         	movefile('crop_brain.nii.gz', [cfg.t1,'.gz']);
@@ -481,7 +489,7 @@ function []  = multiband_prepro(subject)
     rmdir(cfg.preprodir)
     cfg = rmfield(cfg,{'preprodir'});
     
-    cd(cfg.featdir)
+    cd(cfg.preprodir)
     save('cfg.mat', 'cfg')
    
     fprintf(1, '\t\t  %s: Preprocessing complete! (^_^) \n', cfg.subject)
