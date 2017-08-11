@@ -12,7 +12,7 @@ function roiTS = prepro_extractTS_FSL(cfg)
     % cfg.parcFile      - location and name of MNI parcellation nifti file. e.g., /path/to/dir/parcellation.nii
     % 
     % cfg.t1dir         - location of grey matter probability mask
-    % cfg.gm            - name of grey matter prob mask
+    % cfg.normGM            - name of grey matter prob mask
     %
     % Linden Parkes, Brain & Mental Health Laboratory, 2016
     % ------------------------------------------------------------------------------
@@ -35,18 +35,18 @@ function roiTS = prepro_extractTS_FSL(cfg)
     % ------------------------------------------------------------------------------
     % Script
     % ------------------------------------------------------------------------------
-    cd(cfg.regdir)
+    cd(cfg.preprocesseddir)
 
     switch cfg.weightGM
         case 'yes'
             % multiply epi by gm prob
-            system([cfg.fsldir,'fslmaths ',cfg.ExtractIn,' -mul ',cfg.regdir,cfg.gm,' epi_w']);
+            system([cfg.fsldir,'fslmaths ',cfg.ExtractIn,' -mul ',cfg.preprocesseddir,cfg.normGM,' epi_w']);
 
             % take the average of the weighted epi data for each parcel
             system([cfg.fsldir,'fslmeants -i epi_w.nii* --label=',cfg.parcFile,' -o epi_parc_mean.txt']);
         
             % take the average of the gm probabilities for each parcel
-            system([cfg.fsldir,'fslmeants -i ',cfg.regdir,cfg.gm,' --label=',cfg.parcFile,' -o gm_parc_mean.txt']);
+            system([cfg.fsldir,'fslmeants -i ',cfg.preprocesseddir,cfg.normGM,' --label=',cfg.parcFile,' -o gm_parc_mean.txt']);
 
             x = dlmread('epi_parc_mean.txt');
             y = dlmread('gm_parc_mean.txt');
