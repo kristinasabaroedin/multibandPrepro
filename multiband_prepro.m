@@ -1,19 +1,35 @@
-function []  = multiband_prepro(subject)
+function []  = multiband_prepro(subject,runCrop,runSkullStrip,runFEATandMelodic,runFIX,runANTs,runSmoothing,runExtractTS)
 
     % Kristina Sabaroedin, Brain & Mental Health Laboratory, 2017
     
-    runCrop = 1;
-    runSkullStrip = 1;
-    runFEAT = 0;
-    retrieveunsmoothedmeanEPI = 0;
-    runMelodic = 0;
-    runFIX = 0;
-    runANTs = 0;
-    runSmoothing = 0;
-    runExtractTS = 0;
+    clc;
+    
+    subprepro = ['/projects/kg98/kristina/GenofCog/datadir/derivatives/',subject];
+    
+    if exist(subprepro) == 0;
+        sprintf('%s: Initialising derivatives folder\n', subject)
+        mkdir(subprepro)
+    end
+    
+    cd(subprepro)
+    
+    if exist('cfg.mat') == 2;
+        load('cfg.mat')
+        display('load cfg.mat')
+    else
+        display('Initialising cfg.mat')
+    end
+    
+    cfg.Date = date;
 
-
-    cfg.date = date;
+    cfg.runCrop = runCrop;
+    cfg.runSkullStrip = runSkullStrip;
+    cfg.runFEATandMelodic = runFEATandMelodic;
+    cfg.runFIX = runFIX;
+    cfg.runANTs = runANTs;
+    cfg.runSmoothing = runSmoothing;
+    cfg.runExtractTS = runExtractTS;
+    
     
     % -----------------------------------------------------------------------------------------------------------------------------
     % Before running FIX
@@ -56,7 +72,7 @@ function []  = multiband_prepro(subject)
     
     
     % ANTs
-    cfg.antsdir = '/usr/local/ants/2.2.0/bin';
+    cfg.antsdir = '/usr/local/ants/2.2.0/bin/';
     setenv('ANTSPATH',cfg.antsdir);
 	cfg.antsscriptsdir = '/usr/local/ants/2.2.0/bin/Scripts/';
 
@@ -87,9 +103,9 @@ function []  = multiband_prepro(subject)
 
     % Directory of preprocessed files
     % anatomical scan; this is where raw skull-stripped T1 is saved
-    cfg.t1prepro = [cfg.derivativesdir, subject, '/02anat/'];
+    cfg.t1prepro = [cfg.derivativesdir, subject, '/anat/'];
     % general prepro; output from FEAT
-    cfg.preprodir = [cfg.derivativesdir,subject,'/02prepro/'];
+    cfg.preprodir = [cfg.derivativesdir,subject,'/prepro/'];
 
     % filename of raw T1
     cfg.rawt1 = [subject,'_T1w.nii.gz'];
@@ -145,7 +161,7 @@ function []  = multiband_prepro(subject)
     % -----------------------------------------------------------------------------------------------------------------------------
     
     if runSkullStrip == 1
-        
+
         cd(cfg.t1prepro)
         
         SkullStrip = {'ANTsBrainExtraction', 'BET'};
@@ -153,33 +169,33 @@ function []  = multiband_prepro(subject)
 
 		switch WhichSkullStrip
 	
-		case 'ANTsBrainExtraction'
-            % Takes a longer time to run, requires a template and a mask,
-            % but more robust than BET. Template and mask used here were
-            % recommended by the creators of the software (for extracting healthy adult
-            % brains)
-			sprintf('%s: Performing ANTs Brain Extraction\n', subject)
-			cfg.antsbrainextracttemplate = '/projects/kg98/kristina/templates/Oasis/T_template0.nii.gz';
-			cfg.antsbrainextractmask = '/projects/kg98/kristina/templates/Oasis/T_template0_BrainCerebellumProbabilityMask.nii.gz';
-			system([cfg.antsscriptsdir,'antsBrainExtraction.sh -d 3 -a ', cfg.croppedt1, ' -e ', cfg.antsbrainextracttemplate, ' -m', cfg.antsbrainextractmask, ' -o ANTs']);
-			movefile('ANTsBrainExtractionBrain.nii.gz', [cfg.t1,'.gz']);
-			movefile('ANTsBrainExtractionMask.nii.gz', [subject,'_crop_brain_mask.nii.gz']);
-			display('T1 is skull stripped')
+            case 'ANTsBrainExtraction'
+                % Takes a longer time to run, requires a template and a mask,
+                % but more robust than BET. Template and mask used here were
+                % recommended by the creators of the software (for extracting healthy adult
+                % brains)
+                sprintf('%s: Performing ANTs Brain Extraction\n', subject)
+                cfg.antsbrainextracttemplate = '/projects/kg98/kristina/templates/Oasis/T_template0.nii.gz';
+                cfg.antsbrainextractmask = '/projects/kg98/kristina/templates/Oasis/T_template0_BrainCerebellumProbabilityMask.nii.gz';
+                system([cfg.antsscriptsdir,'antsBrainExtraction.sh -d 3 -a ', cfg.croppedt1, ' -e ', cfg.antsbrainextracttemplate, ' -m', cfg.antsbrainextractmask, ' -o ANTs']);
+                movefile('ANTsBrainExtractionBrain.nii.gz', [cfg.t1,'.gz']);
+                movefile('ANTsBrainExtractionMask.nii.gz', [subject,'_crop_brain_mask.nii.gz']);
+                display('T1 is skull stripped')
 
-		case 'BET'
-            % BET parameters used here was tailored to the Gen of Cog data,
-            % check result to see if these parameters work for your data.
-            % You might have to adjust the flags/values.
-        	sprintf('%s: Performing BET with -f 0.3 -m -R -B\n', subject)
-        	system([cfg.fsldir,'bet ',cfg.croppedt1,' crop_brain -f 0.3 -m -R -B']);
-        	movefile('crop_brain.nii.gz', [cfg.t1,'.gz']);
-        	movefile('crop_brain_mask.nii.gz', [subject,'_crop_brain_mask.nii.gz']); 
-        	display('T1 is BETted')
-
+            case 'BET'
+                % BET parameters used here was tailored to the Gen of Cog data,
+                % check result to see if these parameters work for your data.
+                % You might have to adjust the flags/values.
+                sprintf('%s: Performing BET with -f 0.3 -m -R -B\n', subject)
+                system([cfg.fsldir,'bet ',cfg.croppedt1,' crop_brain -f 0.3 -m -R -B']);
+                movefile('crop_brain.nii.gz', [cfg.t1,'.gz']);
+                movefile('crop_brain_mask.nii.gz', [subject,'_crop_brain_mask.nii.gz']); 
+                display('T1 is BETted')
+        end
     end
 
     % -----------------------------------------------------------------------------------------------------------------------------
-    % Run FEAT
+    % Run FEAT and Melodic
     % Requires a set up design.fsf file that was manually saved from the FEAT gui
     % FEAT parameters
         % Delete first 4 volumes of epi
@@ -188,16 +204,31 @@ function []  = multiband_prepro(subject)
         % FLIRT: 12 dof, BBR: input image is skull-stripped T1, reference is MNI 2mm T1 brain template
         % Non-linear registration turned ON, warping set to 10mm (default)
     % -----------------------------------------------------------------------------------------------------------------------------
+   
+    % Path to new FEAT directory (FEAT always creates a new folder every time it runs)
+    cfg.featdir = [cfg.derivativesdir,subject,'/prepro.feat/'];
     
-    if runFEAT == 1
+    % Main FEAT epi output
+    cfg.featEpi = 'filtered_func_data.nii';
+    
+    meanEPIunsmoothed = 'mean_func_unsmoothed.nii.gz';
+    
+    if runFEATandMelodic == 1
 
+        if exist(cfg.featdir) == 7;
+            display('Reinitialising FEAT dir')
+            rmdir(cfg.featdir, 's')
+        else
+            display('No existing FEAT directory - OK')
+        end
+            
         cd(cfg.derivativesdir)
 
-        copyfile('design_master02.fsf', cfg.preprodir)
+        copyfile('design_master.fsf', cfg.preprodir)
         cd(cfg.preprodir)
 
         % This step below is superfluous, but I am pedantic about avoiding accidental alteration of the design_master.fsf file 
-        movefile('design_master02.fsf', 'design.fsf');
+        movefile('design_master.fsf', 'design.fsf');
 
         % We want to edit design.fsf so the paths point to the current subject
         % create a variable that contains the content of the textfile
@@ -222,20 +253,10 @@ function []  = multiband_prepro(subject)
 
         delete([cfg.preprodir,'design_run.fsf']);
 
-    end
     
-    
-    % Path to new FEAT directory (FEAT always creates a new folder every time it runs)
-    cfg.featdir = [cfg.derivativesdir,subject,'/02prepro.feat/'];
-
-    % Main FEAT epi output
-    cfg.featEpi = 'filtered_func_data.nii';
-    % -----------------------------------------------------------------------------------------------------------------------------
-    % Retrieve unsmoothed mean EPI for ANTs normalisation
-
-    % -----------------------------------------------------------------------------------------------------------------------------
-
-    if retrieveunsmoothedmeanEPI == 1
+        % -----------------------------------------------------------------------------------------------------------------------------
+        % Retrieve unsmoothed mean EPI for ANTs normalisation
+        % -----------------------------------------------------------------------------------------------------------------------------
 
         cd(cfg.featdir)
 
@@ -266,15 +287,10 @@ function []  = multiband_prepro(subject)
         delete('prefiltered_func_data_mcf*')
 
         display('Unsmoothed mean EPI is retrieved') 
-
-    end
     
-    meanEPIunsmoothed = 'mean_func_unsmoothed.nii.gz';
-    % -----------------------------------------------------------------------------------------------------------------------------
-    % Run ICA Melodic 
-    % -----------------------------------------------------------------------------------------------------------------------------
-
-    if runMelodic == 1
+        % -----------------------------------------------------------------------------------------------------------------------------
+        % Run ICA Melodic 
+        % -----------------------------------------------------------------------------------------------------------------------------
 
         % Directory of melodic output
         cfg.melodicdir = [cfg.featdir,'/filtered_func_data.ica'];
@@ -293,6 +309,8 @@ function []  = multiband_prepro(subject)
     
     if runFIX == 1
 
+        cfg.melodicdir = [cfg.featdir,'/filtered_func_data.ica'];
+        
         cfg.trainingdata = '/projects/kg98/kristina/GenofCog/training/Training.RData';
 
         sprintf('%s: Running ICA-FIX\n', subject)
@@ -304,18 +322,19 @@ function []  = multiband_prepro(subject)
         
         % We want to edit the shell script so the paths point to the current subject
         % create a variable that contains the content of the textfile
-        buffer = fileread('fix_trial.sh');
+        buffer = fileread('fix.sh');
         % replaces ‘sub-000’ with subject within the buffer variable
         buffer = regexprep(buffer, 'sub-000', subject);
-        % create and write a new textfile called fix_trial_run.sh
-        fid = fopen('fix_trial_run.sh', 'w');
+        % create and write a new textfile called fix_run.sh
+        fid = fopen(['fix_run_',subject,'.sh'], 'w');
         % write the edited buffer content into new file
         fwrite(fid, buffer);
         % close text file
         fclose(fid);
        
-        system('sh -c ". $bash /projects/kg98/kristina/GenofCog/scripts/prepro/fix_trial_run.sh "')
+        system(['sh -c ". $bash /projects/kg98/kristina/GenofCog/scripts/prepro/fix_run_',subject,'.sh "'])
 
+		delete(['fix_run_',subject,'.sh']);
     end
     
     % FIX epi output
@@ -327,8 +346,14 @@ function []  = multiband_prepro(subject)
     
     % Path to where the normalised images will be stored
     cfg.regdir = [cfg.featdir,'ants/'] 
-        
+    cfg.preprocesseddir = [cfg.featdir,'preprocessed/']
+   
+	cfg.meanEPIunsmoothed = meanEPIunsmoothed;
+
     if runANTs == 1
+
+        display('Running ANTs')
+        
         % Set parameters for ANTs registration
         % EPI input is cfg.fixEpi
         % T1 input is cfg.t1
@@ -339,12 +364,12 @@ function []  = multiband_prepro(subject)
         fastdir = [cfg.featdir,'fix/'];
 
         % Tissue types
-        gm = 'fastsg_pve_1.nii.gz';
-        wm = 'fastsg_pve_2.nii.gz';
-        csf = 'fastsg_pve_0.nii.gz';
+        cfg.gm = 'fastsg_pve_1.nii.gz';
+        cfg.wm = 'fastsg_pve_2.nii.gz';
+       	cfg.csf = 'fastsg_pve_0.nii.gz';
 
         % MNI template to be used in registration
-        mni_template = '/projects/kg98/kristina/templates/MNI152_T1_2mm_brain.nii';
+        cfg.mni_template = '/projects/kg98/kristina/templates/MNI152_T1_2mm_brain.nii';
 
         cd(cfg.featdir)
         mkdir (cfg.regdir);
@@ -354,30 +379,49 @@ function []  = multiband_prepro(subject)
         
         sprintf('%s: Running ANTs registration\n', subject)
 
-        SpatialNormalisationANTs([cfg.regdir, cfg.fixEpi,[cfg.featdir,meanEPIunsmoothed],...          
+        SpatialNormalisationANTs([cfg.regdir, cfg.fixEpi],[cfg.featdir,cfg.meanEPIunsmoothed],...          
                 [cfg.t1prepro,cfg.t1,'.gz'],...
-                [fastdir,gm],...
-                [fastdir,wm],...
-                [fastdir,csf],...
-                mni_template,cfg.antsdir,cfg.antsscriptsdir)
+                [fastdir,cfg.gm],...
+                [fastdir,cfg.wm],...
+                [fastdir,cfg.csf],...
+                cfg.mni_template,cfg.antsdir,cfg.antsscriptsdir)
 
+        % delete 
+        delete(cfg.fixEpi);
+        
         % rename files
         disp('renaming outputs');
-        movefile (['w',cfg.fixEpi],[cfg.fixEpi(1:end-7),'_ants.nii.gz'])
+        movefile (['w',cfg.fixEpi],[subject,'_',cfg.fixEpi(1:end-7),'_mni.nii.gz'])
 
-        movefile (['w',gm], 'tissue_gm_ants.nii.gz')
-        movefile (['w',wm], 'tissue_wm_ants.nii.gz')
-        movefile (['w',csf], 'tissue_csf_ants.nii.gz')
+        movefile (['w',cfg.gm], [subject,'_tissue_gm_mni.nii.gz'])
+        movefile (['w',cfg.wm], [subject,'_tissue_wm_mni.nii.gz'])
+        movefile (['w',cfg.csf], [subject,'_tissue_csf_mni.nii.gz'])
 
-        movefile (['w',cfg.t1,'.gz'], [cfg.t1(1:end-4),'_ants.nii.gz'])
-
-      
+        movefile (['w',cfg.t1,'.gz'], [cfg.t1(1:end-4),'_mni.nii.gz'])
+        
+        % move files
+        disp('Moving files to preprocessed directory')
+        
+        mkdir(cfg.preprocesseddir)
+        
+		% move epi
+		movefile([cfg.regdir, subject,'_',cfg.fixEpi(1:end-7),'_mni.nii.gz'], cfg.preprocesseddir)
+		% move t1
+        movefile([cfg.regdir, cfg.t1(1:end-4),'_mni.nii.gz'], cfg.preprocesseddir)
+		% move tissue files
+        movefile([cfg.regdir,subject,'_tissue_gm_mni.nii.gz'], cfg.preprocesseddir)
+        movefile([cfg.regdir,subject,'_tissue_wm_mni.nii.gz'], cfg.preprocesseddir)
+        movefile([cfg.regdir,subject,'_tissue_csf_mni.nii.gz'], cfg.preprocesseddir)
+        
         display('done')
      
     end
 
-    cfg.normEpi = 'filtered_func_data_clean_ants.nii'; 
-
+    cfg.normEpi = [subject,'_filtered_func_data_clean_mni.nii.gz']; 
+	cfg.normT1 = [cfg.t1(1:end-4),'_mni.nii.gz'];
+	cfg.normGM = [subject,'_tissue_gm_mni.nii.gz'];
+	cfg.normWM = [subject,'_tissue_wm_mni.nii.gz'];
+	cfg.normCSF = [subject,'_tissue_csf_mni.nii.gz'];
     
     % -----------------------------------------------------------------------------------------------------------------------------
     % Smooth normalised EPI
@@ -385,15 +429,15 @@ function []  = multiband_prepro(subject)
 
     if runSmoothing == 1
 
-        cd(cfg.regdir)
+        cd(cfg.preprocesseddir)
         
         % gunzip normEpi for AFNI smoothing
-        gunzip([cfg.normEpi,'.gz']);
-        delete([cfg.normEpi,'.gz']);
-        
-        cfg.epiprepro = 'filtered_func_data_clean_ants_smooth.nii';
+        %gunzip([cfg.normEpi,'.gz']);
+        %delete([cfg.normEpi,'.gz']);
 
-        system([cfg.afnidir,'3dBlurToFWHM -FWHM 6 -mask /projects/kg98/kristina/templates/MNI152_T1_2mm_brain_mask_dil.nii -prefix smooth -input ', cfg.normEpi]);
+		cfg.smoothingkernel = 6;
+
+        system([cfg.afnidir,'3dBlurToFWHM -FWHM ', num2str(cfg.smoothingkernel),' -mask /projects/kg98/kristina/templates/MNI152_T1_2mm_brain_mask_dil.nii -prefix smooth -input ', cfg.normEpi]);
         % Make sure -mask is pointing to the correct mask path, or you can
         % set mask to -automask
 
@@ -401,15 +445,22 @@ function []  = multiband_prepro(subject)
 
         system([cfg.afnidir,'3dAFNItoNIFTI smooth+*'])
 
+        gzip('smooth.nii');
+        
+        delete('smooth.nii');
+        
         display('Renaming output file')
 
-        movefile('smooth.nii', cfg.epiprepro)
+		cfg.epiprepro = [cfg.normEpi(1:end-7),'_smooth.nii.gz'];
+
+        movefile('smooth.nii.gz', cfg.epiprepro)
         
-        delete('smooth+*');
+        delete('smooth+*'); 
     
+        
     elseif runSmoothing == 0
         
-        cfg.epiprepro = 'filtered_func_data_clean_ants.nii';
+        cfg.epiprepro = [cfg.normEpi(1:end-7),'_smooth.nii.gz'];
         
     end
 
@@ -420,13 +471,13 @@ function []  = multiband_prepro(subject)
 
     if runExtractTS == 1
 
-        cd(cfg.regdir)
+        cd(cfg.preprocesseddir)
 
         % Parcellation file for time series extraction
         cfg.parcFiles = {'/projects/kg98/kristina/ROIs/Gordon/Gordon_MNI_222.nii',...
                         '/projects/kg98/kristina/ROIs/Power/Power.nii',...
                         '/projects/kg98/kristina/ROIs/TriStri/TriStri.nii',...
-                        '/projects/kg98/kristina/ROIs/ROIspheres/SphereParc02.nii'};
+                        '/projects/kg98/kristina/ROIs/ROIspheres/DiMartino.nii'};
 
         cfg.parcWeightGM = {'yes',...
                             'yes',...
@@ -434,9 +485,8 @@ function []  = multiband_prepro(subject)
                             'no'};
 
         % Set input image for time series extraction
-        cfg.ExtractIn = 'filtered_func_data_clean_ants_smooth.nii';
-        
-        cfg.gm = 'tissue_gm_ants.nii.gz';
+        cfg.ExtractIn = cfg.epiprepro;
+
 
         % Initialise roi time series variable
         cfg.roiTS = [];
@@ -453,27 +503,21 @@ function []  = multiband_prepro(subject)
             end
 
             cfg = rmfield(cfg,{'parcFile','weightGM','parcName','gm'});
+        
+                
             
-            cfg.firstleveldir = [cfg.derivativesdir,subject,'/firstlevel/'];
-            
-            if exist(cfg.firstleveldir) == 0
-                sprintf('%s: Initialising firstlevel folder\n', subject)
-                mkdir(cfg.firstleveldir)
-            end
-            
-            movefile('roiTS_*.txt', cfg.firstleveldir)
+           
         end
 
     % Save defined parameters and variables in a matlab file    
    
     cd([cfg.derivativesdir,subject])
-    rmdir(cfg.preprodir)
-    cfg = rmfield(cfg,{'preprodir'});
-    
-    cd(cfg.preprodir)
-    save('cfg.mat', 'cfg')
    
-    fprintf(1, '\t\t  %s: Preprocessing complete! (^_^) \n', cfg.subject)
+    save('cfg.mat', 'cfg')
+
+	rmdir('prepro')
+   
+    fprintf(1, '\t\t  %s: Preprocessing complete! \n', cfg.subject)
 
 end
 
