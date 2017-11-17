@@ -179,7 +179,7 @@ function []  = multiband_prepro(subject,runCrop,runSkullStrip,runFEATandMelodic,
                 cfg.antsbrainextractmask = '/projects/kg98/kristina/templates/Oasis/T_template0_BrainCerebellumProbabilityMask.nii.gz';
                 system([cfg.antsscriptsdir,'antsBrainExtraction.sh -d 3 -a ', cfg.croppedt1, ' -e ', cfg.antsbrainextracttemplate, ' -m', cfg.antsbrainextractmask, ' -o ANTs']);
                 movefile('ANTsBrainExtractionBrain.nii.gz', [cfg.t1,'.gz']);
-                movefile('ANTsBrainExtractionMask.nii.gz', [subject,'_crop_brain_mask.nii.gz']);
+                movefile('ANTsBrainExtractionMask.nii.gz', [subject,'_T1w_crop_brain_mask.nii.gz']);
                 display('T1 is skull stripped')
 
             case 'BET'
