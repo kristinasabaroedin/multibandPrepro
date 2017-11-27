@@ -55,7 +55,6 @@ function [] = SpatialNormalisationANTs(EPI,meanEPIunsmoothed,t1file,gm,wm,csf,mn
 
 	system([funcdir,ANTsCall,' -d 3 -m ',movImage,' -f ',refImage,' -t ',transform,' -o ',output])
 
-	% delete('epi2t1.nii.gz')
 
 	% ------------------------------------------------------------------------------
 	% Nonlinear warp of native T1 image to SPM template (i.e., MNI space)
@@ -68,13 +67,13 @@ function [] = SpatialNormalisationANTs(EPI,meanEPIunsmoothed,t1file,gm,wm,csf,mn
 	system([funcdir,ANTsCall,' -d 3 -m ',movImage,' -f ',refImage,' -t ',transform,' -o ',output])
 
 	% unzip normalised T1
-	gunzip([output,'.nii.gz'])
-	delete([output,'.nii.gz'])
+% 	gunzip([output,'.nii.gz'])
+% 	delete([output,'.nii.gz'])
 
 	% % rename output T1 file
 	[fPath,fName,fExt] = fileparts(movImage);
 	warpedT1 = ['w',fName,fExt];
-	movefile('t12MNI.nii',warpedT1)
+	movefile('t12MNIWarped.nii.gz',warpedT1)
 
 	% ------------------------------------------------------------------------------
 	% Apply transforms
@@ -85,12 +84,12 @@ function [] = SpatialNormalisationANTs(EPI,meanEPIunsmoothed,t1file,gm,wm,csf,mn
 	% But! when I do it the command line output indicates that they are applied in the reverse to how they are entered
 	% So, I enter them in reverse here...
 	% warps = '-t epi2t1_0GenericAffine.mat -t t12MNI_0GenericAffine.mat -t t12MNI_1Warp.nii.gz ';
-	warps = '-t t12MNI_1Warp.nii.gz -t t12MNI_0GenericAffine.mat -t epi2t1_0GenericAffine.mat ';
+	warps = '-t t12MNI1Warp.nii.gz -t t12MNI0GenericAffine.mat -t epi2t10GenericAffine.mat ';
 
 	% 1) 4D EPI
 	
 
-	movImage = [EPI,'.nii.gz'];
+	movImage = EPI;
 	[fPath,fName,fExt] = fileparts(movImage);
 	output = ['w',fName,fExt];
 
@@ -106,7 +105,7 @@ function [] = SpatialNormalisationANTs(EPI,meanEPIunsmoothed,t1file,gm,wm,csf,mn
 
 	% redefine warps
 	% warps = '-t t12MNI_0GenericAffine.mat -t t12MNI_1Warp.nii.gz ';
-	warps = '-t t12MNI_1Warp.nii.gz -t t12MNI_0GenericAffine.mat ';
+	warps = '-t t12MNI1Warp.nii.gz -t t12MNI0GenericAffine.mat ';
 
 	% 3) GM
 	movImage = gm;
