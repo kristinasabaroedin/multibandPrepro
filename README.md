@@ -1,6 +1,6 @@
 # multibandPrepro
 preprocessing scripts for multiband resting-state fmri
-Main script: multiband_prepro.m
+Main script: multiband_prepro_gsr.m
 
 	This script is made to work with BIDS directory and file naming structure
 
