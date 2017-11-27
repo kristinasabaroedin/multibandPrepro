@@ -33,8 +33,7 @@ function []  = multiband_prepro_gsr(subject,runCrop,runSkullStrip,runFEATandMelo
     cfg.runExtractTSGSR = runExtractTSGSR;
 
     
-    
-    % -----------------------------------------------------------------------------------------------------------------------------
+   -----------------------------------------------------------------------------------------------------------------------------
     % Before running FIX
     % Make sure that all required R libraries are installed (I think FIX
     % will prompt you to install the libraries, or it might fail and the
@@ -51,7 +50,7 @@ function []  = multiband_prepro_gsr(subject,runCrop,runSkullStrip,runFEATandMelo
    
     % Note: FIX runs with Matlab/r2016a
     
-    % -----------------------------------------------------------------------------------------------------------------------------
+ -----------------------------------------------------------------------------------------------------------------------------
     % Paths to scripts required to run preprocessing
     % -----------------------------------------------------------------------------------------------------------------------------
 
@@ -59,6 +58,7 @@ function []  = multiband_prepro_gsr(subject,runCrop,runSkullStrip,runFEATandMelo
     addpath(cfg.scriptdir)
 
 
+<<<<<<< HEAD
 %     -----------------------------------------------------------------------------------------------------------------------------
 %     Paths to modules
 %     -----------------------------------------------------------------------------------------------------------------------------
@@ -82,10 +82,32 @@ function []  = multiband_prepro_gsr(subject,runCrop,runSkullStrip,runFEATandMelo
 %     cfg.afnidir = '/usr/local/afni/16.2.16/';
 %     addpath(cfg.afnidir)
 
+ -----------------------------------------------------------------------------------------------------------------------------
+ % Paths to modules
+    % -----------------------------------------------------------------------------------------------------------------------------
 
-    % -----------------------------------------------------------------------------------------------------------------------------
-    % Paths to subject's data
-    % -----------------------------------------------------------------------------------------------------------------------------
+    % set FSL environment 
+    cfg.fsldir = '/usr/local/fsl/5.0.9/fsl/bin/';
+    setenv('FSLDIR',cfg.fsldir(1:end-4));
+    setenv('FSLOUTPUTTYPE','NIFTI_GZ');
+    setenv('LD_LIBRARY_PATH',[getenv('PATH'),getenv('LD_LIBRARY_PATH'),':/usr/lib/fsl/5.0'])
+
+    % Directory of FIX
+    cfg.fixdir = '/usr/local/fix/1.064/bin/fix/';
+    setenv('FIXDIR',cfg.fixdir);
+    
+    
+    % ANTs
+    cfg.antsdir = '/usr/local/ants/2.2.0/bin/';
+    setenv('ANTSPATH',cfg.antsdir);
+    cfg.antsscriptsdir = '/usr/local/ants/2.2.0/bin/Scripts/';
+
+    % Directory to AFNI functions
+    cfg.afnidir = '/usr/local/afni/16.2.16/';
+    addpath(cfg.afnidir)
+
+ -----------------------------------------------------------------------------------------------------------------------------
+    % Paths to subject's data -----------------------------------------------------------------------------------------------------------------------------
     
     cfg.subject = subject; 
     
@@ -116,20 +138,22 @@ function []  = multiband_prepro_gsr(subject,runCrop,runSkullStrip,runFEATandMelo
     % filename of skull-stripped T1
     cfg.t1 = [subject,'_T1w_crop_brain.nii'];
 
+
     % Raw resting-state functional file is called through fsl’s design.fsf file, and will be processed using FEAT
+
+    % Raw resting-state functional file is called through fsl?s design.fsf file, and will be processed using FEAT
+
 
     cfg.removeNoise = 'ICA-FIX';
 
-    % -----------------------------------------------------------------------------------------------------------------------------
-    % Set parameters
-    % -----------------------------------------------------------------------------------------------------------------------------
+     -----------------------------------------------------------------------------------------------------------------------------
+    % Set parameters -----------------------------------------------------------------------------------------------------------------------------
     cfg.project = 'Genetics of Cognition';
     cfg.tN = 616;
     cfg.TR = 0.754;
 
-    % -----------------------------------------------------------------------------------------------------------------------------
-    % Set subject anatomical folder in derivatives directory 
-    % -----------------------------------------------------------------------------------------------------------------------------
+     -----------------------------------------------------------------------------------------------------------------------------
+    % Set subject anatomical folder in derivatives directory  -----------------------------------------------------------------------------------------------------------------------------
     if exist(cfg.t1prepro) == 0
         sprintf('%s: Initialising anatomical derivatives folder\n', subject)
         mkdir(cfg.t1prepro)
@@ -143,9 +167,8 @@ function []  = multiband_prepro_gsr(subject,runCrop,runSkullStrip,runFEATandMelo
         mkdir(cfg.preprodir)
     end
 
-    % -----------------------------------------------------------------------------------------------------------------------------
-    % Crop out neck from raw T1
-    % -----------------------------------------------------------------------------------------------------------------------------
+     -----------------------------------------------------------------------------------------------------------------------------
+    % Crop out neck from raw T1 -----------------------------------------------------------------------------------------------------------------------------
     
     if runCrop == 1
 
@@ -158,7 +181,7 @@ function []  = multiband_prepro_gsr(subject,runCrop,runSkullStrip,runFEATandMelo
 
     end
 
-    % -----------------------------------------------------------------------------------------------------------------------------
+   -----------------------------------------------------------------------------------------------------------------------------
     % Skull-strip cropped T1
     % -----------------------------------------------------------------------------------------------------------------------------
     
@@ -167,15 +190,14 @@ function []  = multiband_prepro_gsr(subject,runCrop,runSkullStrip,runFEATandMelo
         cd(cfg.t1prepro)
         
         SkullStrip = {'ANTsBrainExtraction', 'BET'};
-        WhichSkullStrip = SkullStrip{1};
+        WhichSkullStrip = SkullStrip{1}; %{1}-ANTs or {2}-BET
 
 		switch WhichSkullStrip
-	
             case 'ANTsBrainExtraction'
                 % Takes a longer time to run, requires a template and a mask,
                 % but more robust than BET. Template and mask used here were
                 % recommended by the creators of the software (for extracting healthy adult
-                % brains)
+                % brains); downloadable from https://figshare.com/articles/ANTs_ANTsR_Brain_Templates/915436
                 sprintf('%s: Performing ANTs Brain Extraction\n', subject)
                 cfg.antsbrainextracttemplate = '/projects/kg98/kristina/templates/Oasis/T_template0.nii.gz';
                 cfg.antsbrainextractmask = '/projects/kg98/kristina/templates/Oasis/T_template0_BrainCerebellumProbabilityMask.nii.gz';
@@ -350,7 +372,6 @@ function []  = multiband_prepro_gsr(subject,runCrop,runSkullStrip,runFEATandMelo
     % Path to where the normalised images will be stored
     cfg.regdir = [cfg.featdir,'ants/'] 
     cfg.preprocesseddir = [cfg.featdir,'preprocessed/']
-   
 	cfg.meanEPIunsmoothed = meanEPIunsmoothed;
 
     if runANTs == 1
@@ -370,6 +391,7 @@ function []  = multiband_prepro_gsr(subject,runCrop,runSkullStrip,runFEATandMelo
         cfg.gm = 'fastsg_pve_1.nii.gz';
         cfg.wm = 'fastsg_pve_2.nii.gz';
        	cfg.csf = 'fastsg_pve_0.nii.gz';
+
 
         % MNI template to be used in registration
         cfg.mni_template = '/projects/kg98/kristina/templates/MNI152_T1_2mm_brain.nii';
@@ -406,7 +428,7 @@ function []  = multiband_prepro_gsr(subject,runCrop,runSkullStrip,runFEATandMelo
         disp('Moving files to preprocessed directory')
         
         mkdir(cfg.preprocesseddir)
-        
+
 		% move epi
 		movefile([cfg.regdir, subject,'_',cfg.fixEpi(1:end-7),'_mni.nii.gz'], cfg.preprocesseddir)
 		% move t1
@@ -425,10 +447,10 @@ function []  = multiband_prepro_gsr(subject,runCrop,runSkullStrip,runFEATandMelo
 	cfg.normGM = [subject,'_tissue_gm_mni.nii.gz'];
 	cfg.normWM = [subject,'_tissue_wm_mni.nii.gz'];
 	cfg.normCSF = [subject,'_tissue_csf_mni.nii.gz'];
+
     
-    % -----------------------------------------------------------------------------------------------------------------------------
-    % Smooth normalised EPI
-    % -----------------------------------------------------------------------------------------------------------------------------
+ -----------------------------------------------------------------------------------------------------------------------------
+    % Smooth normalised EPI -----------------------------------------------------------------------------------------------------------------------------
 
     if runSmoothing == 1
 
@@ -437,6 +459,7 @@ function []  = multiband_prepro_gsr(subject,runCrop,runSkullStrip,runFEATandMelo
         % gunzip normEpi for AFNI smoothing
         %gunzip([cfg.normEpi,'.gz']);
         %delete([cfg.normEpi,'.gz']);
+
 
 		cfg.smoothingkernel = 6;
 
@@ -467,10 +490,8 @@ function []  = multiband_prepro_gsr(subject,runCrop,runSkullStrip,runFEATandMelo
         
     end
 
-
-    % -----------------------------------------------------------------------------------------------------------------------------
-    % Extract time-series
-    % -----------------------------------------------------------------------------------------------------------------------------
+ -----------------------------------------------------------------------------------------------------------------------------
+    % Extract time-series -----------------------------------------------------------------------------------------------------------------------------
 
     if runExtractTS == 1
 
@@ -571,8 +592,9 @@ function []  = multiband_prepro_gsr(subject,runCrop,runSkullStrip,runFEATandMelo
     save('cfg.mat', 'cfg')
 
     if exist('prepro') == 7;
-            rmdir('prepro')
+    	rmdir('prepro')
     end
+
     
     fprintf(1, '\t\t  %s: Preprocessing complete! \n', cfg.subject)
     
